@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Rewards - Spin & Win</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: #0a0a0a;
+            color: white;
+            overflow-x: hidden;
+            margin: 0;
+        }
+
+        /* Full Page Background Decoration */
+        .bg-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            padding: 20px;
+            opacity: 0.15;
+            overflow: hidden;
+        }
+
+        .bg-card {
+            width: 150px;
+            height: 90px;
+            border-radius: 10px;
+            background-size: cover;
+            background-position: center;
+            animation: moveCards 20s linear infinite;
+        }
+
+        @keyframes moveCards {
+            from { transform: translateY(100vh); }
+            to { transform: translateY(-100vh); }
+        }
+
+        .glass-panel {
+            background: rgba(20, 20, 20, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Wheel Container */
+        .wheel-wrapper {
+            position: relative;
+            width: 340px;
+            height: 340px;
+            margin: auto;
+        }
+
+        #wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 8px solid #222;
+            box-shadow: 0 0 30px #3b82f6;
+            transition: transform 5s cubic-bezier(0.15, 0, 0.1, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .seg {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            transform-origin: 100% 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 900;
+            font-size: 10px;
+            text-align: center;
+        }
+
+        .seg img {
+            width: 25px;
+            height: 25px;
+            margin-bottom: 5px;
+            object-fit: contain;
+        }
+
+        .pointer {
+            position: absolute;
+            top: -20px; left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.5));
+        }
+
+        .hidden { display: none; }
+        
+        .voucher-card {
+            background: linear-gradient(135deg, #1e1e1e 0%, #111 100%);
+            border: 2px solid #333;
+            border-radius: 20px;
+            padding: 25px;
+            position: relative;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- Floating Background Cards -->
+    <div class="bg-overlay" id="bg-decor"></div>
+
+    <div class="w-full max-w-md glass-panel p-8 relative overflow-hidden">
+        
+        <!-- SECTION 1: WELCOME -->
+        <div id="screen-welcome" class="text-center">
+            <h1 class="text-4xl font-black mb-4 tracking-tighter text-blue-500 italic">TECH-SPIN 2026</h1>
+            <p class="text-gray-400 mb-8 font-medium">Complete 10 short questions to unlock the Mega Spin Wheel!</p>
+            
+            <div class="flex justify-center gap-4 mb-8">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" class="h-6 invert opacity-50">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/b/bc/Myntra_Logo.png" class="h-6 opacity-50">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/7/7a/Flipkart_logo.svg" class="h-6 opacity-50">
+            </div>
+
+            <button onclick="startSurvey()" class="w-full bg-blue-600 hover:bg-blue-700 py-4 rounded-2xl font-black text-xl shadow-lg transition-all">
+                START SURVEY 🎁
+            </button>
+        </div>
+
+        <!-- SECTION 2: SURVEY -->
+        <div id="screen-survey" class="hidden">
+            <div class="mb-6">
+                <div class="flex justify-between mb-2">
+                    <span class="text-xs font-bold text-blue-400">AI & TECH SURVEY</span>
+                    <span id="q-number" class="text-xs font-bold">1/10</span>
+                </div>
+                <div class="w-full bg-gray-800 h-2 rounded-full">
+                    <div id="q-progress" class="bg-blue-500 h-full rounded-full" style="width: 10%"></div>
+                </div>
+            </div>
+            <div id="q-box" class="min-h-[300px] flex flex-col justify-center">
+                <!-- Survey Qs -->
+            </div>
+        </div>
+
+        <!-- SECTION 3: SPIN WHEEL -->
+        <div id="screen-spin" class="hidden text-center">
+            <h2 class="text-2xl font-black mb-6 text-yellow-500">UNLOCKED! GOOD LUCK 🍀</h2>
+            <div class="wheel-wrapper">
+                <div class="pointer">
+                    <svg width="40" height="40" viewBox="0 0 40 40"><path d="M20 40L40 0H0L20 40Z" fill="#ff0000"/></svg>
+                </div>
+                <div id="wheel"></div>
+            </div>
+            <button id="spin-btn" onclick="spinNow()" class="w-full mt-10 bg-gradient-to-r from-orange-500 to-red-600 py-4 rounded-2xl font-black text-2xl shadow-xl">
+                SPIN NOW
+            </button>
+        </div>
+
+        <!-- SECTION 4: REWARD -->
+        <div id="screen-reward" class="hidden">
+            <div class="text-center mb-6">
+                <h2 class="text-3xl font-black text-green-500">CONGRATULATIONS!</h2>
+                <p class="text-sm text-gray-400">Claim your exclusive reward below</p>
+            </div>
+            <div id="reward-result"></div>
+            <p class="text-[10px] text-gray-600 text-center mt-6">Terms & Conditions Apply. Reward valid till July 2027.</p>
+        </div>
+
+    </div>
+
+    <script>
+        const amzLogo = 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg';
+        const myntraLogo = 'https://upload.wikimedia.org/wikipedia/commons/b/bc/Myntra_Logo.png';
+        const jioLogo = 'https://upload.wikimedia.org/wikipedia/en/5/5f/JioSaavn_Logo.png';
+        const flipkartLogo = 'https://upload.wikimedia.org/wikipedia/commons/7/7a/Flipkart_logo.svg';
+
+        // Prize Data from your photos
+        const prizes = [
+            { label: "AMAZON PAY", brand: "Amazon Pay", logo: amzLogo, color: "#ff9900", code: "D3YWRNQQCEX7YW", pin: "6014883325020303", val: "₹10 Gift Card", inst: "Amazon App > Amazon Pay > Add Gift Card" },
+            { label: "MYNTRA 5%", brand: "Myntra", logo: myntraLogo, color: "#fe3f6c", code: "8FK3NC6ECKQ4PLP4", val: "5% Off Voucher", inst: "Myntra App > Select Product > Apply Coupon" },
+            { label: "JIOSAAVN", brand: "JioSaavn", logo: jioLogo, color: "#24d171", code: "FLKJS1M", pin: "20025049", val: "30 Days Pro", inst: "JioSaavn App > Settings > Pro > Redeem" },
+            { label: "FLIPKART", brand: "Flipkart", logo: flipkartLogo, color: "#2874f0", code: "FK_OFF_SAVE", val: "Special Discount", inst: "Flipkart > My Account > My Rewards" },
+            { label: "AMAZON PAY", brand: "Amazon Pay", logo: amzLogo, color: "#ff9900", code: "ENYT-B4VMRB-DK8B", pin: "6014879135742641", val: "₹10 Gift Card", inst: "Amazon App > Amazon Pay > Add Gift Card" },
+            { label: "MYNTRA MEN", brand: "Myntra", logo: myntraLogo, color: "#fe3f6c", code: "8FK3NCN3LTEGPEP8", val: "100 Off Voucher", inst: "Myntra > Men Fashion > Apply Coupon" },
+            { label: "POCKET FM", brand: "Pocket FM", logo: 'https://upload.wikimedia.org/wikipedia/commons/e/e0/Pocket_FM_Logo.png', color: "#f39c12", code: "FPBBDKI4W62DAEJUNJ0", val: "14 Days Sub", inst: "Pocket FM > My Store > Use Promo Code" },
+            { label: "GAANA PLUS", brand: "Gaana", logo: 'https://upload.wikimedia.org/wikipedia/commons/c/c5/Gaana_logo.png', color: "#e74c3c", code: "FK7564VD22H7", val: "60 Days Trial", inst: "Gaana App > Settings > Subscriptions > Redeem" }
+        ];
+
+        const questions = [
+            { q: "Aapka pasandida shopping brand kaunsa hai?", o: ["Amazon", "Flipkart", "Myntra"] },
+            { q: "Kya aap daily AI tools use karte hain?", o: ["Haan", "Nahi", "Kabhi-kabhi"] },
+            { q: "Online payment ke liye fav app?", o: ["Amazon Pay", "Paytm", "PhonePe"] },
+            { q: "Agli bar kya kharidne ka plan hai?", o: ["Gadgets", "Fashion", "Grocery"] },
+            { q: "Kya aap tech news follow karte hain?", o: ["Yes", "No", "Zaroorat nahi"] },
+            { q: "AI jobs ke liye accha hai ya bura?", o: ["Accha", "Bura", "Pata nahi"] },
+            { q: "Kitne ghante phone use karte hain?", o: ["2-4 Ghante", "6+ Ghante", "Kam"] },
+            { q: "Sabse fastest delivery kiski hai?", o: ["Amazon", "Flipkart", "Blinkit"] },
+            { q: "Online safety par kitna dhayan dete hain?", o: ["Poora", "Thoda", "Nahi"] },
+            { q: "Rewards jeetna kaisa lagta hai?", o: ["Awesome", "Theek hai", "Cool"] }
+        ];
+
+        // Background Decoration Logic
+        const bgContainer = document.getElementById('bg-decor');
+        const bgLogos = [amzLogo, myntraLogo, flipkartLogo];
+        for(let i=0; i<30; i++){
+            const div = document.createElement('div');
+            div.className = 'bg-card';
+            div.style.backgroundImage = `url('https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=200&auto=format&fit=crop')`; // Generic gift card look
+            div.style.left = Math.random() * 90 + '%';
+            div.style.animationDelay = Math.random() * 15 + 's';
+            bgContainer.appendChild(div);
+        }
+
+        let step = 0;
+        function startSurvey() {
+            if(localStorage.getItem('spun_2026')) {
+                showReward(JSON.parse(localStorage.getItem('prize_2026')));
+                return;
+            }
+            document.getElementById('screen-welcome').classList.add('hidden');
+            document.getElementById('screen-survey').classList.remove('hidden');
+            loadQ();
+        }
+
+        function loadQ() {
+            const q = questions[step];
+            document.getElementById('q-number').innerText = `${step+1}/10`;
+            document.getElementById('q-progress').style.width = `${(step+1)*10}%`;
+            document.getElementById('q-box').innerHTML = `
+                <h3 class="text-2xl font-bold mb-8">${q.q}</h3>
+                <div class="space-y-4">
+                    ${q.o.map(opt => `<button onclick="nextQ()" class="w-full text-left p-5 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition font-bold">${opt}</button>`).join('')}
+                </div>
+            `;
+        }
+
+        function nextQ() {
+            step++;
+            if(step < 10) loadQ();
+            else {
+                document.getElementById('screen-survey').classList.add('hidden');
+                document.getElementById('screen-spin').classList.remove('hidden');
+                initWheel();
+            }
+        }
+
+        function initWheel() {
+            const wheel = document.getElementById('wheel');
+            prizes.forEach((p, i) => {
+                const el = document.createElement('div');
+                el.className = 'seg';
+                el.style.transform = `rotate(${i * 45}deg) skewY(-45deg)`;
+                el.style.backgroundColor = p.color;
+                el.innerHTML = `
+                    <div style="transform: skewY(45deg) rotate(22.5deg); position:absolute; right:15px; top:40px; display:flex; flex-direction:column; align-items:center;">
+                        <img src="${p.logo}" style="${p.brand==='Amazon Pay'?'filter:invert(1)':''}">
+                        <span style="font-size:8px">${p.label}</span>
+                    </div>
+                `;
+                wheel.appendChild(el);
+            });
+        }
+
+        function spinNow() {
+            const btn = document.getElementById('spin-btn');
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+
+            const prizeIndex = Math.floor(Math.random() * prizes.length);
+            const rotation = (5 * 360) + (360 - (prizeIndex * 45)) - 22.5;
+            
+            document.getElementById('wheel').style.transform = `rotate(${rotation}deg)`;
+
+            setTimeout(() => {
+                confetti({ particleCount: 200, spread: 70, origin: { y: 0.6 } });
+                const prize = prizes[prizeIndex];
+                localStorage.setItem('spun_2026', 'true');
+                localStorage.setItem('prize_2026', JSON.stringify(prize));
+                showReward(prize);
+            }, 5200);
+        }
+
+        function showReward(item) {
+            document.getElementById('screen-welcome').classList.add('hidden');
+            document.getElementById('screen-spin').classList.add('hidden');
+            document.getElementById('screen-reward').classList.remove('hidden');
+
+            document.getElementById('reward-result').innerHTML = `
+                <div class="voucher-card">
+                    <div class="flex justify-between items-start mb-6">
+                        <img src="${item.logo}" class="h-10 ${item.brand==='Amazon Pay'?'invert':''}">
+                        <div class="text-right">
+                            <p class="text-[10px] text-gray-500 font-bold uppercase">Reward Value</p>
+                            <p class="text-2xl font-black text-white">${item.val}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-black/50 p-4 rounded-xl border border-dashed border-gray-700 mb-6">
+                        <p class="text-[10px] text-blue-400 font-bold mb-1">VOUCHER CODE</p>
+                        <p class="text-xl font-mono font-bold tracking-wider text-yellow-500 mb-4 select-all">${item.code}</p>
+                        
+                        ${item.pin ? `
+                            <p class="text-[10px] text-blue-400 font-bold mb-1">PIN / REFERENCE ID</p>
+                            <p class="text-sm font-mono text-gray-300 select-all">${item.pin}</p>
+                        ` : ''}
+                    </div>
+
+                    <div class="text-left">
+                        <p class="text-[10px] text-gray-500 font-bold uppercase mb-2 italic">How to Redeem</p>
+                        <ul class="text-[11px] text-gray-400 space-y-1 list-disc pl-4">
+                            ${item.inst.split('>').map(s => `<li>${s.trim()}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+  </html>
